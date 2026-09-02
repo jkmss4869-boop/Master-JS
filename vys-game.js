@@ -1,13 +1,14 @@
 const VYSGame = (() => {
 
   // ==========================================================
-  // CẤU HÌNH MẶC ĐỊNH
+  // CẤU HÌNH
   // ==========================================================
 
   let API_URL =
     "https://script.google.com/macros/s/AKfycbyg_srgOPCBUwamR_ArHzhM5xuGw-wPV3OfRIdHRWGqK1fShEK0r031R9zsoGYyxOdy6Q/exec";
 
-  let GAME_LINK = "";
+  const SITE_BASE_URL =
+    "https://sites.google.com/view/vividlearningcom/home-page/learning-roadmap";
 
 
   // ==========================================================
@@ -16,25 +17,43 @@ const VYSGame = (() => {
 
   function init(config = {}) {
 
-    // Nếu game truyền API mới → dùng API mới
-    // Nếu không → giữ API mặc định
     API_URL = config.apiUrl || API_URL;
-
-    // URL thật của trang Google Sites chứa game
-    GAME_LINK = config.gameLink || GAME_LINK;
 
     if (!API_URL) {
       console.warn("VYSGame: Chưa cấu hình API URL.");
     }
 
-    if (!GAME_LINK) {
-      console.warn(
-        "VYSGame: Chưa cấu hình gameLink. " +
-        "Nếu game được nhúng trong Google Sites, hãy truyền gameLink khi init()."
-      );
-    }
-
     return VYSGame;
+  }
+
+
+  // ==========================================================
+  // TẠO SLUG TỪ TÊN BÀI
+  // ==========================================================
+
+  function createSlug(text) {
+
+    return text
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  }
+
+
+  // ==========================================================
+  // TẠO GAME LINK TỪ TÊN BÀI
+  // ==========================================================
+
+  function createGameLink(lessonName) {
+
+    const slug = createSlug(lessonName);
+
+    return `${SITE_BASE_URL}/${slug}`;
   }
 
 
@@ -83,7 +102,7 @@ const VYSGame = (() => {
   } = {}) {
 
     // --------------------------------------------------------
-    // KIỂM TRA DỮ LIỆU BẮT BUỘC
+    // KIỂM TRA DỮ LIỆU
     // --------------------------------------------------------
 
     if (!playerName) {
@@ -118,29 +137,30 @@ const VYSGame = (() => {
 
 
     // --------------------------------------------------------
-    // XÁC ĐỊNH GAME LINK
+    // TẠO GAME LINK
     // --------------------------------------------------------
     //
-    // Ưu tiên:
+    // Nếu game có truyền gameLink riêng → dùng nó.
     //
-    // 1. gameLink truyền trực tiếp vào saveScore()
-    // 2. gameLink được cấu hình trong init()
-    // 3. document.referrer
-    // 4. window.location.href
+    // Nếu không → tự tạo từ lessonName.
     //
-    // Trong Google Sites, cách 1 hoặc 2 sẽ đảm bảo
-    // lấy đúng URL trang Google Sites.
+    // Ví dụ:
+    //
+    // "Unit 3: Getting Started"
+    //
+    // →
+    //
+    // https://sites.google.com/view/vividlearningcom/
+    // home-page/learning-roadmap/unit-3-getting-started
+    //
     // --------------------------------------------------------
 
     const finalGameLink =
-      gameLink ||
-      GAME_LINK ||
-      document.referrer ||
-      window.location.href;
+      gameLink || createGameLink(lessonName);
 
 
     // --------------------------------------------------------
-    // TẠO PAYLOAD
+    // PAYLOAD
     // --------------------------------------------------------
 
     const payload = {
@@ -161,10 +181,6 @@ const VYSGame = (() => {
 
     };
 
-
-    // --------------------------------------------------------
-    // GỬI API
-    // --------------------------------------------------------
 
     return await post(payload);
   }
@@ -198,7 +214,6 @@ const VYSGame = (() => {
       );
     }
 
-
     const payload = {
 
       action: "saveDetailList",
@@ -210,7 +225,6 @@ const VYSGame = (() => {
       details: details
 
     };
-
 
     return await post(payload);
   }
@@ -242,7 +256,6 @@ const VYSGame = (() => {
       );
     }
 
-
     const payload = {
 
       action: "saveDetail",
@@ -263,7 +276,6 @@ const VYSGame = (() => {
 
     };
 
-
     return await post(payload);
   }
 
@@ -280,7 +292,11 @@ const VYSGame = (() => {
 
     saveDetails,
 
-    saveDetail
+    saveDetail,
+
+    createSlug,
+
+    createGameLink
 
   };
 
