@@ -1,10 +1,13 @@
 const VYSGame = (() => {
 
   // ==========================================================
-  // CẤU HÌNH
+  // CẤU HÌNH MẶC ĐỊNH
   // ==========================================================
 
-  let API_URL = "https://script.google.com/macros/s/AKfycbyg_srgOPCBUwamR_ArHzhM5xuGw-wPV3OfRIdHRWGqK1fShEK0r031R9zsoGYyxOdy6Q/exec";
+  let API_URL =
+    "https://script.google.com/macros/s/AKfycbyg_srgOPCBUwamR_ArHzhM5xuGw-wPV3OfRIdHRWGqK1fShEK0r031R9zsoGYyxOdy6Q/exec";
+
+  let GAME_LINK = "";
 
 
   // ==========================================================
@@ -13,10 +16,22 @@ const VYSGame = (() => {
 
   function init(config = {}) {
 
-    API_URL = config.apiUrl || "";
+    // Nếu game truyền API mới → dùng API mới
+    // Nếu không → giữ API mặc định
+    API_URL = config.apiUrl || API_URL;
+
+    // URL thật của trang Google Sites chứa game
+    GAME_LINK = config.gameLink || GAME_LINK;
 
     if (!API_URL) {
       console.warn("VYSGame: Chưa cấu hình API URL.");
+    }
+
+    if (!GAME_LINK) {
+      console.warn(
+        "VYSGame: Chưa cấu hình gameLink. " +
+        "Nếu game được nhúng trong Google Sites, hãy truyền gameLink khi init()."
+      );
     }
 
     return VYSGame;
@@ -30,7 +45,9 @@ const VYSGame = (() => {
   async function post(data) {
 
     if (!API_URL) {
-      throw new Error("VYSGame: API URL chưa được cấu hình.");
+      throw new Error(
+        "VYSGame: API URL chưa được cấu hình."
+      );
     }
 
     const response = await fetch(API_URL, {
@@ -65,33 +82,66 @@ const VYSGame = (() => {
     gameLink
   } = {}) {
 
-    // Kiểm tra dữ liệu bắt buộc
+    // --------------------------------------------------------
+    // KIỂM TRA DỮ LIỆU BẮT BUỘC
+    // --------------------------------------------------------
+
     if (!playerName) {
-      throw new Error("VYSGame.saveScore: Thiếu playerName.");
+      throw new Error(
+        "VYSGame.saveScore: Thiếu playerName."
+      );
     }
 
     if (!lessonName) {
-      throw new Error("VYSGame.saveScore: Thiếu lessonName.");
+      throw new Error(
+        "VYSGame.saveScore: Thiếu lessonName."
+      );
     }
 
     if (!gameType) {
-      throw new Error("VYSGame.saveScore: Thiếu gameType.");
+      throw new Error(
+        "VYSGame.saveScore: Thiếu gameType."
+      );
     }
 
     if (score === undefined || score === null) {
-      throw new Error("VYSGame.saveScore: Thiếu score.");
+      throw new Error(
+        "VYSGame.saveScore: Thiếu score."
+      );
     }
 
     if (total === undefined || total === null) {
-      throw new Error("VYSGame.saveScore: Thiếu total.");
+      throw new Error(
+        "VYSGame.saveScore: Thiếu total."
+      );
     }
 
 
-    // Nếu game không truyền link
-    // → tự lấy URL hiện tại
-    const finalGameLink =
-      gameLink || window.location.href;
+    // --------------------------------------------------------
+    // XÁC ĐỊNH GAME LINK
+    // --------------------------------------------------------
+    //
+    // Ưu tiên:
+    //
+    // 1. gameLink truyền trực tiếp vào saveScore()
+    // 2. gameLink được cấu hình trong init()
+    // 3. document.referrer
+    // 4. window.location.href
+    //
+    // Trong Google Sites, cách 1 hoặc 2 sẽ đảm bảo
+    // lấy đúng URL trang Google Sites.
+    // --------------------------------------------------------
 
+    const finalGameLink =
+      gameLink ||
+      GAME_LINK ||
+      document.referrer ||
+      window.location.href;
+
+
+    // --------------------------------------------------------
+    // TẠO PAYLOAD
+    // --------------------------------------------------------
 
     const payload = {
 
@@ -112,6 +162,10 @@ const VYSGame = (() => {
     };
 
 
+    // --------------------------------------------------------
+    // GỬI API
+    // --------------------------------------------------------
+
     return await post(payload);
   }
 
@@ -127,11 +181,15 @@ const VYSGame = (() => {
   } = {}) {
 
     if (!playerName) {
-      throw new Error("VYSGame.saveDetails: Thiếu playerName.");
+      throw new Error(
+        "VYSGame.saveDetails: Thiếu playerName."
+      );
     }
 
     if (!exerciseName) {
-      throw new Error("VYSGame.saveDetails: Thiếu exerciseName.");
+      throw new Error(
+        "VYSGame.saveDetails: Thiếu exerciseName."
+      );
     }
 
     if (!Array.isArray(details)) {
@@ -165,22 +223,23 @@ const VYSGame = (() => {
   async function saveDetail({
     playerName,
     exerciseName,
-
     question,
     userAnswer,
     correctAnswer,
     isCorrect,
-
     ...extraData
-
   } = {}) {
 
     if (!playerName) {
-      throw new Error("VYSGame.saveDetail: Thiếu playerName.");
+      throw new Error(
+        "VYSGame.saveDetail: Thiếu playerName."
+      );
     }
 
     if (!exerciseName) {
-      throw new Error("VYSGame.saveDetail: Thiếu exerciseName.");
+      throw new Error(
+        "VYSGame.saveDetail: Thiếu exerciseName."
+      );
     }
 
 
